@@ -1,0 +1,1 @@
+ALTER TABLE ai_forecasts ADD COLUMN IF NOT EXISTS key_factors JSONB;

@@ -1,0 +1,205 @@
+:root {
+  --gov-navy: #0b3d66;
+  --gov-navy-dark: #062b47;
+  --gov-navy-light: #134a7a;
+  --gov-gold: #c99a2e;
+  --gov-gold-dark: #a97f1f;
+  --bg: #eef2f5;
+  --surface: #ffffff;
+  --text: #1f2933;
+  --text-muted: #5c6b7a;
+  --border: #d7dee5;
+  --success: #1e7e34;
+  --success-bg: #e6f4ea;
+  --danger: #b3261e;
+  --danger-bg: #fceae9;
+  --warning: #a15c00;
+  --warning-bg: #fdf1dc;
+  --info: #0b3d66;
+  --info-bg: #e7f0f8;
+  --shadow: 0 1px 3px rgba(15, 40, 66, 0.12), 0 1px 2px rgba(15, 40, 66, 0.08);
+  --radius: 10px;
+
+  font: 15px/1.5 'Segoe UI', system-ui, Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  color-scheme: light;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4 {
+  color: var(--gov-navy-dark);
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+h1 { font-size: 26px; }
+h2 { font-size: 19px; }
+h3 { font-size: 16px; }
+
+p { margin: 0 0 8px; }
+
+a { color: var(--gov-navy); }
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text);
+  width: 100%;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--gov-navy-light);
+  outline-offset: 1px;
+  border-color: var(--gov-navy-light);
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.field {
+  margin-bottom: 14px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 14px;
+  transition: filter 0.15s ease;
+}
+
+.btn:hover { filter: brightness(0.95); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.btn-primary { background: var(--gov-navy); color: #fff; }
+.btn-gold { background: var(--gov-gold); color: #3a2c00; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-outline { background: #fff; color: var(--gov-navy); border-color: var(--gov-navy); }
+.btn-sm { padding: 5px 12px; font-size: 12.5px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--gov-navy);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.muted { color: var(--text-muted); font-size: 13px; }
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.badge-success { background: var(--success-bg); color: var(--success); }
+.badge-danger { background: var(--danger-bg); color: var(--danger); }
+.badge-warning { background: var(--warning-bg); color: var(--warning); }
+.badge-info { background: var(--info-bg); color: var(--info); }
+.badge-neutral { background: #eceff1; color: #45525c; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+th, td {
+  text-align: left;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.alert {
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  margin-bottom: 12px;
+}
+
+.alert-error { background: var(--danger-bg); color: var(--danger); border: 1px solid #f2c6c2; }
+.alert-success { background: var(--success-bg); color: var(--success); border: 1px solid #c3e6cb; }
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.form-row > .field { flex: 1; min-width: 160px; }
+
+.stat {
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fbfcfd;
+}
+.stat .stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.stat .stat-value { font-size: 26px; font-weight: 700; color: var(--gov-navy-dark); }
+
+@media (max-width: 720px) {
+  .grid-2 { grid-template-columns: 1fr; }
+}
