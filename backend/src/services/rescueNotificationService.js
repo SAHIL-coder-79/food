@@ -4,8 +4,10 @@ const surplusListingModel = require('../models/surplusListingModel');
 const organizationModel = require('../models/organizationModel');
 const userModel = require('../models/userModel');
 const notificationModel = require('../models/notificationModel');
+const messagingIdentityModel = require('../models/messagingIdentityModel');
 const ngoMatching = require('../ai/ngoMatching');
 const communicationService = require('../integrations/communication/service');
+const messagingService = require('../integrations/messaging/service');
 const AppError = require('../utils/AppError');
 const env = require('../config/env');
 const { LISTING_STATUS, NGO_ROLES, NOTIFICATION_TYPES } = require('../utils/constants');
@@ -44,19 +46,29 @@ async function notifyOneOrganization(ngoOrgId, body) {
 
     await notificationModel.createMany(users.map((user) => ({ userId: user.id, type: NOTIFICATION_TYPES.SURPLUS_POSTED, message: body })));
 
-    // Mock/real providers have no phone number to address (none exists in the schema, and Task 19 explicitly
-    // says not to invent one) - the existing user email is reused as the recipient identifier instead. A real
-    // WhatsApp/SMS provider would need a phone number field added at that point; see the final report.
-    const deliveries = users.map((user) => {
+    // Task 21 Part 12: prefer a real, verified WhatsApp identity (a genuine phone number, linked through the
+    // secure code flow in messagingIdentityService.js) when this NGO user actually has one linked - never
+    // assume every NGO does. Only when no such identity exists does this fall back to Task 19's original
+    // email-based communication provider, exactly as before.
+    const deliveries = [];
+    for (const user of users) {
+        // eslint-disable-next-line no-await-in-loop -- small, bounded recipient list; see the loop above this function
+        const identity = await messagingIdentityModel.findActiveByUserId(user.id);
         try {
-            const result = communicationService.sendMessage({ to: user.email, channel: env.communicationDefaultChannel, body });
-            return { userId: user.id, ...result };
+            let result;
+            if (identity) {
+                // eslint-disable-next-line no-await-in-loop
+                result = await messagingService.sendMessage({ to: identity.externalUserId, channel: identity.channel, body });
+            } else {
+                result = await communicationService.sendMessage({ to: user.email, channel: env.communicationDefaultChannel, body });
+            }
+            deliveries.push({ userId: user.id, ...result });
         } catch (error) {
-            // Belt-and-braces: communicationService.sendMessage already catches provider errors itself, but a
+            // Belt-and-braces: both sendMessage functions already catch their own provider errors, but a
             // rescue notification must never fail the request no matter where a failure occurs.
-            return { userId: user.id, accepted: false, error: error.message };
+            deliveries.push({ userId: user.id, accepted: false, error: error.message });
         }
-    });
+    }
 
     return {
         accepted: deliveries.some((d) => d.accepted),

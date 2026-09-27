@@ -21,6 +21,7 @@ import ProcessingPage from './pages/ProcessingPage';
 import LearningPage from './pages/LearningPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
+import MessagingAssistantDevPage from './pages/MessagingAssistantDevPage';
 
 const KITCHEN_TABS = [
   { key: 'dashboard', label: 'Dashboard', component: DashboardPage },
@@ -37,6 +38,7 @@ const KITCHEN_TABS = [
   { key: 'financial', label: 'Financial Impact', component: FinancialImpactPage },
   { key: 'simulator', label: 'Simulator', component: SimulatorPage },
   { key: 'learning', label: 'Learning', component: LearningPage },
+  { key: 'messaging-dev', label: 'WhatsApp Assistant (Dev)', component: MessagingAssistantDevPage },
   { key: 'profile', label: 'Profile', component: ProfilePage },
 ];
 

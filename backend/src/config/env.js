@@ -25,6 +25,25 @@ function validateEnv() {
                 "Generate one with: node -e \"console.log(require('crypto').randomBytes(48).toString('hex'))\""
         );
     }
+
+    // Task 21: if a deployment explicitly asks for the real Meta provider, it must actually be configured -
+    // never silently fall back to the mock provider (which would look "successful" while quietly sending
+    // nothing real anywhere). This fails fast at startup, the same way a missing DATABASE_URL does above.
+    if (process.env.MESSAGING_ENABLED === 'true' && (process.env.MESSAGING_PROVIDER || 'mock') === 'meta') {
+        const requiredMetaVars = [
+            'META_WHATSAPP_VERIFY_TOKEN',
+            'META_WHATSAPP_APP_SECRET',
+            'META_WHATSAPP_ACCESS_TOKEN',
+            'META_WHATSAPP_PHONE_NUMBER_ID',
+        ];
+        const missingMeta = requiredMetaVars.filter((key) => !process.env[key]);
+        if (missingMeta.length > 0) {
+            throw new Error(
+                `MESSAGING_PROVIDER=meta requires the following environment variable(s), which are missing: ` +
+                    `${missingMeta.join(', ')}. Set them in .env, or use MESSAGING_PROVIDER=mock for local/demo use.`
+            );
+        }
+    }
 }
 
 validateEnv();
@@ -67,4 +86,49 @@ module.exports = {
     rescueNotificationMaxRecipients: Number(process.env.RESCUE_NOTIFICATION_MAX_RECIPIENTS) || 10,
     // Minimum time between two notification sends for the SAME listing, regardless of who requests it.
     rescueNotificationCooldownMs: Number(process.env.RESCUE_NOTIFICATION_COOLDOWN_MS) || 5 * 60 * 1000,
+
+    // FoodShare Conversational Assistant (Task 20) - see integrations/messaging/ and ai/conversationalAssistant/.
+    // Disabled by default, exactly like the Task 19 communication layer: only the deterministic mock provider
+    // exists, and the webhook/parsing/confirmation logic works fully offline with zero external credentials.
+    messagingEnabled: process.env.MESSAGING_ENABLED === 'true',
+    messagingProvider: process.env.MESSAGING_PROVIDER || 'mock',
+    // Shared secret a provider's webhook call must present (see integrations/messaging/mockProvider.js
+    // verifyWebhook). Left blank by default for frictionless local/mock testing; a real provider integration
+    // would instead verify a cryptographic signature (e.g. Meta's X-Hub-Signature-256) - see the README.
+    messagingWebhookSecret: process.env.MESSAGING_WEBHOOK_SECRET || '',
+    // How long a pending "awaiting confirmation" (or "still collecting details") conversation stays alive
+    // before it silently expires and the user has to start over.
+    messagingSessionTtlMinutes: Number(process.env.MESSAGING_SESSION_TTL_MINUTES) || 10,
+    messagingRateLimitMax: Number(process.env.MESSAGING_RATE_LIMIT_MAX) || 30,
+    messagingRateLimitWindowMs: Number(process.env.MESSAGING_RATE_LIMIT_WINDOW_MS) || 60 * 1000,
+    // A WhatsApp-linking code (see services/messagingIdentityService.js) is only valid to redeem for this long.
+    messagingLinkRequestTtlMinutes: Number(process.env.MESSAGING_LINK_REQUEST_TTL_MINUTES) || 10,
+
+    // Real Meta WhatsApp Cloud API (Task 21) - see integrations/messaging/metaProvider.js. Only used when
+    // MESSAGING_PROVIDER=meta; every value here is server-side only and is never sent to the frontend, logged,
+    // or returned in any API response. Never committed - see .env.example for placeholders only.
+    // GET /api/messaging/webhook verification (hub.verify_token) - a value YOU choose and enter into the Meta
+    // App Dashboard's webhook configuration; never hard-coded.
+    metaWhatsappVerifyToken: process.env.META_WHATSAPP_VERIFY_TOKEN || '',
+    // The Meta App's own secret, used to HMAC-SHA256-verify the X-Hub-Signature-256 header on every inbound
+    // POST webhook - see the current Meta Graph API webhooks documentation for the exact mechanism.
+    metaWhatsappAppSecret: process.env.META_WHATSAPP_APP_SECRET || '',
+    // A System User or temporary access token for the WhatsApp Business Account, used as the Bearer token when
+    // calling the Cloud API's own /messages endpoint to send a reply.
+    metaWhatsappAccessToken: process.env.META_WHATSAPP_ACCESS_TOKEN || '',
+    metaWhatsappPhoneNumberId: process.env.META_WHATSAPP_PHONE_NUMBER_ID || '',
+    // Graph API version - kept configurable (never hard-coded elsewhere) since Meta regularly deprecates old
+    // versions on a rolling schedule. Verify the current version at
+    // https://developers.facebook.com/docs/graph-api/changelog before deploying.
+    // v26.0 was Meta's current Graph API version at the time this integration was written (verified against
+    // https://developers.facebook.com/docs/graph-api/changelog) - re-check before relying on this default.
+    metaGraphApiVersion: process.env.META_WHATSAPP_GRAPH_API_VERSION || 'v26.0',
+
+    // LOCAL DEVELOPMENT/DEMO ONLY - see services/messagingIdentityService.js's ensureDemoIdentityIfConfigured
+    // and routes/messagingRoutes.js's /test/inbound. When set, the first message from an unrecognised sender
+    // ARRIVING THROUGH THE TEST ENDPOINT ONLY (never the real /webhook) is auto-linked to this existing
+    // FoodShare user, so the full report -> confirm -> real-surplus flow can be demoed with zero manual
+    // linking. Never used when NODE_ENV=production, regardless of this being set. Not a real database id
+    // hard-coded here - a plain integer you configure yourself, pointing at a demo kitchen user you created.
+    testMessagingKitchenUserId: Number(process.env.TEST_MESSAGING_KITCHEN_USER_ID) || null,
 };

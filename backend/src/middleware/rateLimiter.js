@@ -89,10 +89,21 @@ const communicationLimiter = createRateLimiter({
     message: 'Too many notification requests from this address. Please wait a while and try again.',
 });
 
+// Conversational assistant webhook (Task 20): protects against message spam, repeated confirmations and
+// webhook flooding. Keyed by the message's own claimed sender id (falling back to IP) rather than the
+// webhook caller's IP alone, so one noisy sender can't exhaust the limit for every other legitimate sender
+// arriving through the same provider's shared webhook traffic.
+const messagingWebhookLimiter = createRateLimiter({
+    windowMs: readIntEnv('MESSAGING_RATE_LIMIT_WINDOW_MS', 60 * 1000), // 1 minute
+    max: readIntEnv('MESSAGING_RATE_LIMIT_MAX', 30),
+    message: 'Too many messages received from this sender. Please wait a moment and try again.',
+    keyGenerator: (req) => (req.body && req.body.sender && req.body.sender.externalId) || req.ip,
+});
+
 // Test-only: clears every limiter's counters, so a test file that configures its own small limit for testing
 // does not carry hits over between cases.
 function resetAllRateLimiters() {
     registry.forEach((hits) => hits.clear());
 }
 
-module.exports = { createRateLimiter, loginLimiter, registerLimiter, communicationLimiter, resetAllRateLimiters };
+module.exports = { createRateLimiter, loginLimiter, registerLimiter, communicationLimiter, messagingWebhookLimiter, resetAllRateLimiters };

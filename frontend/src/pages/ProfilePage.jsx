@@ -1,6 +1,79 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
+// A small, reusable "WhatsApp Notifications" panel - available to both kitchen and NGO users (kitchens use it
+// to report surplus over chat; NGOs use it to receive rescue notifications over WhatsApp instead of only
+// email). Only shows provider/enabled status and linked numbers - never a secret, token or credential.
+function WhatsAppLinkingCard({ call }) {
+  const [status, setStatus] = useState(null);
+  const [identities, setIdentities] = useState([]);
+  const [linkRequest, setLinkRequest] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    try {
+      const [statusRes, identitiesRes] = await Promise.all([call('/messaging/status'), call('/messaging/identities/me')]);
+      setStatus(statusRes.data);
+      setIdentities(identitiesRes.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const generateCode = async () => {
+    setError('');
+    setLinkRequest(null);
+    try {
+      const data = await call('/messaging/link-requests', { method: 'POST', body: { provider: status?.provider || 'mock', channel: 'whatsapp' } });
+      setLinkRequest(data.data);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  return (
+    <div className="card">
+      <div className="card-header"><h2>WhatsApp Notifications</h2></div>
+      {error && <div className="alert alert-error">{error}</div>}
+      {loading ? (
+        <p className="muted">Loading…</p>
+      ) : (
+        <>
+          <p className="muted">
+            Provider: {status?.provider === 'meta' ? 'Meta WhatsApp Cloud API' : 'Demo / Mock'}
+            {' — '}
+            {status?.enabled ? 'enabled' : 'disabled'}
+          </p>
+          {identities.length === 0 ? (
+            <p className="muted">No WhatsApp number linked yet.</p>
+          ) : (
+            <ul>
+              {identities.map((id) => (
+                <li key={id.id}>{id.externalUserId} ({id.provider}) {id.active ? '— active' : '— inactive'}</li>
+              ))}
+            </ul>
+          )}
+          <button type="button" className="btn btn-outline btn-sm" onClick={generateCode}>Generate Linking Code</button>
+          {linkRequest && (
+            <div className="alert alert-success" style={{ marginTop: 10 }}>
+              <p><strong>Code: {linkRequest.code}</strong> (expires {new Date(linkRequest.expiresAt).toLocaleTimeString()})</p>
+              <p className="muted" style={{ fontSize: 12.5 }}>{linkRequest.instructions}</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function ProfilePage() {
   const { call, organization, refreshOrganization, user } = useAuth();
   const isNgo = organization?.type === 'ngo';
@@ -98,6 +171,8 @@ export default function ProfilePage() {
           <p className="muted">Only the organization's manager/admin can edit this profile.</p>
         )}
       </div>
+
+      <WhatsAppLinkingCard call={call} />
     </div>
   );
 }

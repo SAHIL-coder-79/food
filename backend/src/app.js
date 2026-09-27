@@ -14,6 +14,7 @@ const foodQualityRoutes = require('./routes/foodQualityRoutes');
 const donationLedgerRoutes = require('./routes/donationLedgerRoutes');
 const rescueRouteRoutes = require('./routes/rescueRouteRoutes');
 const rescueNotificationRoutes = require('./routes/rescueNotificationRoutes');
+const messagingRoutes = require('./routes/messagingRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -29,7 +30,19 @@ app.use((_req, res, next) => {
 // see ai/foodQuality/service.js) is the one deliberate exception, needing a somewhat larger - but still small and
 // bounded - limit. The service itself enforces a much smaller effective image size (~300 KB decoded); this is
 // only the outer transport-level backstop.
-app.use(express.json({ limit: '600kb' }));
+// `verify` stashes the exact raw bytes Express received, alongside (not instead of) the normal parsed
+// `req.body` - every existing JSON endpoint is completely unaffected. This exists solely so the Meta WhatsApp
+// provider (integrations/messaging/metaProvider.js) can HMAC-verify X-Hub-Signature-256 against the ORIGINAL
+// bytes Meta signed - re-serializing the parsed body is not guaranteed to be byte-identical (key order,
+// whitespace, unicode escaping can all differ), which would make signature verification unreliable.
+app.use(
+    express.json({
+        limit: '600kb',
+        verify: (req, _res, buf) => {
+            req.rawBody = buf;
+        },
+    })
+);
 // Routes
 app.use('/api', apiRoutes); // health, auth, organizations, menu-items, daily-logs, surplus-listings, notifications
 app.use('/api/forecasts', forecastRoutes);
@@ -44,6 +57,7 @@ app.use('/api/food-quality', foodQualityRoutes);
 app.use('/api/donations', donationLedgerRoutes);
 app.use('/api/rescue-routes', rescueRouteRoutes);
 app.use('/api/communications', rescueNotificationRoutes);
+app.use('/api/messaging', messagingRoutes);
 
 app.use((_req, res) => {
     res.status(404).json({ status: 'error', message: 'Not found' });

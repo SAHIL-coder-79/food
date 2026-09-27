@@ -24,3 +24,7 @@ process.env.COMMUNICATION_ENABLED = process.env.COMMUNICATION_ENABLED || 'true';
 // The per-listing notification cooldown (services/rescueNotificationService.js) would otherwise make a second
 // notify request in the same test file fail unless a test explicitly wants to exercise it.
 process.env.RESCUE_NOTIFICATION_COOLDOWN_MS = process.env.RESCUE_NOTIFICATION_COOLDOWN_MS || '0';
+// Conversational assistant (Task 20): generous by default so the webhook test suite isn't rate-limited;
+// exercise the real (mock) send path by default, same reasoning as COMMUNICATION_ENABLED above.
+process.env.MESSAGING_RATE_LIMIT_MAX = process.env.MESSAGING_RATE_LIMIT_MAX || '100000';
+process.env.MESSAGING_ENABLED = process.env.MESSAGING_ENABLED || 'true';

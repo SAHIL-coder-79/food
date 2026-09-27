@@ -81,6 +81,13 @@ const ROUTES = [
     ['donationLedgerRoutes', 'get', '/:listingId/certificate', [...KITCHEN, ...NGO], {}],
     ['rescueRouteRoutes', 'post', '/preview', NGO, {}],
     ['rescueNotificationRoutes', 'post', '/rescue/:listingId/notify', KITCHEN, {}],
+    ['messagingRoutes', 'get', '/webhook', null, { public: true }],
+    ['messagingRoutes', 'post', '/webhook', null, { public: true }],
+    ['messagingRoutes', 'post', '/test/inbound', null, { public: true }],
+    ['messagingRoutes', 'get', '/status', ALL_ROLES, {}],
+    ['messagingRoutes', 'post', '/identities', [...KITCHEN, ...NGO], {}],
+    ['messagingRoutes', 'get', '/identities/me', [...KITCHEN, ...NGO], {}],
+    ['messagingRoutes', 'post', '/link-requests', [...KITCHEN, ...NGO], {}],
 ];
 
 const BASE = {
@@ -105,6 +112,7 @@ const BASE = {
     donationLedgerRoutes: '/api/donations',
     rescueRouteRoutes: '/api/rescue-routes',
     rescueNotificationRoutes: '/api/communications',
+    messagingRoutes: '/api/messaging',
 };
 
 const NONEXISTENT_ID = '2000000000'; // valid integer, no such row: role checks run before any ownership lookup
@@ -180,7 +188,7 @@ describe('route inventory', () => {
 
     it('classifies every route declared in src/routes (and nothing that does not exist)', () => {
         expect(declared.sort()).toEqual(classified.sort());
-        expect(declared.length).toBe(57);
+        expect(declared.length).toBe(64);
     });
 
     it('mounts every route file under a known prefix', () => {
@@ -218,8 +226,18 @@ describe('authentication on every protected route', () => {
         expect((await send(route, inactiveToken)).status).toBe(401);
     });
 
-    it('the public routes are exactly health, register-organization and login', () => {
-        expect(ROUTES.filter((r) => r[4].public).map((r) => r[2]).sort()).toEqual(['/health', '/login', '/register-organization']);
+    it('the public routes are exactly health, register-organization, login and the messaging webhook/dev-simulator', () => {
+        // The messaging webhook is deliberately public - a provider's callback can't present a FoodShare JWT.
+        // Its security instead comes from provider.verifyWebhook, server-side identity resolution and rate
+        // limiting (see routes/messagingRoutes.js and messagingAssistantService.js).
+        expect(ROUTES.filter((r) => r[4].public).map((r) => r[2]).sort()).toEqual([
+            '/health',
+            '/login',
+            '/register-organization',
+            '/test/inbound',
+            '/webhook', // GET - subscription verification
+            '/webhook', // POST - the real inbound webhook
+        ]);
     });
 });
 
