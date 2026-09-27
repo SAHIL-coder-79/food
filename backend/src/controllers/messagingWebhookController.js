@@ -1,4 +1,4 @@
-const asyncHandler = require('../utils/asyncHandler');
+﻿const asyncHandler = require('../utils/asyncHandler');
 const messagingService = require('../integrations/messaging/service');
 const messagingAssistantService = require('../services/messagingAssistantService');
 const messagingIdentityService = require('../services/messagingIdentityService');
@@ -11,6 +11,13 @@ const env = require('../config/env');
 // skip Meta's HMAC check even when MESSAGING_PROVIDER=meta is configured).
 function makeReceiveHandler(providerOverride) {
     return asyncHandler(async (req, res) => {
+        console.log('[Meta webhook received]', {
+            method: req.method,
+            originalUrl: req.originalUrl,
+            rawBodyPresent: Boolean(req.rawBody),
+            signatureHeaderExists: Boolean(req.headers['x-hub-signature-256']),
+        });
+
         const providerName = providerOverride || env.messagingProvider;
 
         let verified;
@@ -168,3 +175,6 @@ const status = (req, res) => {
 };
 
 module.exports = { receiveWebhook, receiveTestInbound, verifyWebhookChallenge, linkIdentity, myIdentities, createLinkRequest, status };
+
+
+
