@@ -1,4 +1,4 @@
-require('./config/env');
+﻿require('./config/env');
 const express = require('express');
 const cors = require('cors');
 const apiRoutes = require('./routes');
@@ -17,9 +17,24 @@ const rescueNotificationRoutes = require('./routes/rescueNotificationRoutes');
 const messagingRoutes = require('./routes/messagingRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
+const path = require('path');
 const app = express();
 
 app.disable('x-powered-by'); // do not advertise the framework
+
+// Public routes for Meta App publishing requirements (Privacy, Terms, Data Deletion)
+app.get('/privacy', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/privacy.html'));
+});
+
+app.get('/terms', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/terms.html'));
+});
+
+app.get('/data-deletion', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/data-deletion.html'));
+});
+
 app.use(cors());
 // API responses carry per-user data: never let a browser or proxy cache or sniff them.
 app.use((_req, res, next) => {
@@ -66,3 +81,4 @@ app.use((_req, res) => {
 app.use(errorHandler);
 
 module.exports = app;
+
