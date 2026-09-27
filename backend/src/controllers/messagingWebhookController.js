@@ -22,8 +22,11 @@ function makeReceiveHandler(providerOverride) {
 
         let verified;
         try {
+            console.log('[Meta webhook verify:start]');
             verified = messagingService.verifyWebhook(providerName, req);
+            console.log('[Meta webhook verify:passed]');
         } catch (error) {
+            console.log('[Meta webhook verify:failed]', { name: error.name, message: error.message });
             throw new AppError(400, error.message);
         }
         if (!verified) {
@@ -46,7 +49,15 @@ function makeReceiveHandler(providerOverride) {
             throw new AppError(400, 'Malformed inbound message');
         }
 
-        const result = await messagingAssistantService.handleInboundMessage(normalized);
+        let result;
+        try {
+            console.log('[Meta webhook processing:start]');
+            result = await messagingAssistantService.handleInboundMessage(normalized);
+            console.log('[Meta webhook processing:passed]');
+        } catch (err) {
+            console.log('[Meta webhook processing:failed]', { name: err.name, message: err.message });
+            throw err;
+        }
         res.status(200).json({ status: 'success', data: result });
     });
 }
@@ -175,6 +186,7 @@ const status = (req, res) => {
 };
 
 module.exports = { receiveWebhook, receiveTestInbound, verifyWebhookChallenge, linkIdentity, myIdentities, createLinkRequest, status };
+
 
 
 
